@@ -1,7 +1,9 @@
 ﻿using PvcCore;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using ZetaHtmlCompressor;
 
 namespace PvcPlugins
@@ -9,6 +11,7 @@ namespace PvcPlugins
     public class PvcHtmlCompressor : PvcPlugin
     {
         private readonly HtmlCompressor compressor;
+        private readonly bool concurrent;
 
         /// <summary>
         /// Removes unnecessary whitespace and markup from HTML documents.
@@ -30,6 +33,7 @@ namespace PvcPlugins
         /// <param name="removeHttpsProtocol">Remove "https:" from tag attributes</param>
         /// <param name="removeSurroundingSpacesTags">Predefined or custom comma separated list of tags [min|max|all|custom_list]</param>
         public PvcHtmlCompressor(
+            bool concurrent = true,
             bool removeComments = true,
             bool removeMultiSpaces = true,
             bool removeLineBreaks = true,
@@ -49,6 +53,7 @@ namespace PvcPlugins
             )
         {
             this.compressor = new HtmlCompressor();
+            this.concurrent = concurrent;
             compressor.setRemoveComments(removeComments);
             compressor.setRemoveMultiSpaces(removeMultiSpaces);
             compressor.setPreserveLineBreaks(!removeLineBreaks);
@@ -67,18 +72,34 @@ namespace PvcPlugins
             compressor.setRemoveSurroundingSpaces(removeSurroundingSpacesTags);
         }
 
+        private PvcStream CompressStream(PvcStream inputStream)
+        {
+            string html = new StreamReader(inputStream).ReadToEnd();
+            var compressed = compressor.compress(html);
+            Console.WriteLine(string.Format("Minified {0} from {1} to {2} bytes", inputStream.StreamName, html.Length, compressed.Length));
+            return PvcUtil.StringToStream(compressed, inputStream.StreamName);
+        }
+
         public override IEnumerable<PvcStream> Execute(IEnumerable<PvcStream> inputStreams)
         {
-            var outputStreams = new List<PvcStream>();
-
-            foreach(var stream in inputStreams)
+            if (this.concurrent)
             {
-                string html = new StreamReader(stream).ReadToEnd();
-                var compressed = compressor.compress(html);
-                Console.WriteLine(string.Format("Minified {0} from {1} to {2} bytes", stream.StreamName, html.Length, compressed.Length));
-                outputStreams.Add(PvcUtil.StringToStream(compressed, stream.StreamName));
+                var outputStreamBag = new ConcurrentBag<PvcStream>();
+                Parallel.ForEach<PvcStream>(inputStreams, (inputStream) =>
+                {
+                    outputStreamBag.Add(this.CompressStream(inputStream));
+                });
+                return new List<PvcStream>(outputStreamBag);
             }
-            return outputStreams;
+            else
+            {
+                var outputStreams = new List<PvcStream>();
+                foreach (var inputStream in inputStreams)
+                {
+                    outputStreams.Add(this.CompressStream(inputStream));
+                }
+                return outputStreams;
+            }
         }
     }
 }
