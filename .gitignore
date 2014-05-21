@@ -3,6 +3,7 @@
 
 README.html
 *.nupkg
+pvc-packages
 
 # User-specific files
 *.suo

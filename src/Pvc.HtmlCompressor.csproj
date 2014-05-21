@@ -30,9 +30,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Pvc.Core, Version=0.0.1.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Pvc.Core, Version=0.0.1.2, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Pvc.Core.0.0.1.0\lib\net45\Pvc.Core.dll</HintPath>
+      <HintPath>..\packages\Pvc.Core.0.0.1.2\lib\net45\Pvc.Core.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -48,6 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="Pvc.HtmlCompressor.nuspec" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
